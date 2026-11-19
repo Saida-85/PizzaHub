@@ -2,6 +2,7 @@ import Banner from "@/components/Banner";
 import FeaturedMenuSection from "@/components/FeaturedMenuSection";
 import PizzaCategoriesSection from "@/components/PizzaCategoriesSection";
 import WhyChooseSection from "@/components/WhyChooseSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
 
 export default function Home() {
   return (
@@ -10,6 +11,7 @@ export default function Home() {
       <FeaturedMenuSection />
       <PizzaCategoriesSection />
       <WhyChooseSection />
+      <HowItWorksSection />
     </div>
   );
 }
