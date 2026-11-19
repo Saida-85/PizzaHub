@@ -97,7 +97,7 @@ export default function Navbar() {
               Pizza<span className="text-[#D4A359]">Hub</span>
             </span>
             <span className="text-[9px] tracking-[0.28em] text-[#94A3B8] uppercase mt-1">
-              Wood-Fired Kitchen
+              Slice of Happiness
             </span>
           </div>
         </Link>
