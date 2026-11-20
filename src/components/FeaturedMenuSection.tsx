@@ -122,7 +122,7 @@ export default function FeaturedMenuSection({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.45, delay: index * 0.06 }}
-              className="h-full flex flex-col bg-[#132024] border border-[#D4A359]/20 hover:border-[#D4A359]/60 transition-colors overflow-hidden group"
+              className="h-full flex flex-col bg-[#070C0E] border border-[#D4A359]/20 hover:border-[#D4A359]/60 transition-colors overflow-hidden group"
             >
               {/* Uniform Image Container */}
               <div className="relative w-full aspect-[4/3] bg-[#0e181b] overflow-hidden shrink-0">

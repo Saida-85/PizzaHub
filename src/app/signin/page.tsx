@@ -37,7 +37,7 @@ export default function SignInPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
-        className="relative z-10 w-full max-w-md bg-[#132024] border border-[#D4A359]/25 p-7 sm:p-8 shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
+        className="relative z-10 w-full max-w-md bg-[#0B1315] border border-[#D4A359]/25 p-7 sm:p-8 shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
       >
         {/* Brand Header */}
         <div className="text-center mb-7">

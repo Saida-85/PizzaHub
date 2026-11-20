@@ -38,14 +38,13 @@ const CATEGORIES = [
     description: "Garlic knots, baked wings, cheesy sticks & dipping sauces.",
     icon: UtensilsCrossed,
     image:
-      "https://i.ibb.co.com/zTHJVvm1/Saffron-Risotto-Cakes-with-Lemon-Aioli-and-Microgreens-Cooking-Mediterranean.jpg",
+      "https://i.ibb.co.com/pFDz6TK/Gourmet-Ice-Cream-Dessert-Platter-Elegant-Fine-Dining-Dessert.jpg",
   },
   {
     name: "Beverages & Desserts",
     description: "Chilled craft sodas, Italian desserts & sweet finishes.",
     icon: Wine,
-    image:
-      "https://i.ibb.co.com/HL3HtqcX/Summer-looks-good-here-You-re-the-only-thing-that-s-missing.jpg",
+    image: "https://i.ibb.co.com/TD2Rt6RS/Drink-photography.jpg",
   },
 ];
 

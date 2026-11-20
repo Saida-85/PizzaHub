@@ -57,7 +57,7 @@ export default function WhyChooseSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.4, delay: idx * 0.06 }}
-                className="h-full bg-[#132024] border border-[#D4A359]/20 p-6 flex flex-col"
+                className="h-full bg-[#070C0E] border border-[#D4A359]/20 p-6 flex flex-col"
               >
                 <Icon className="w-6 h-6 text-[#E05A2B] mb-4" />
                 <h3 className="text-base font-bold text-white">

@@ -22,8 +22,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
-// Replace this import with your Better Auth client path once created (e.g., "@/lib/auth-client")
-// import { useSession, signOut } from "@/lib/auth-client";
 
 interface NavUser {
   id: string;
@@ -38,17 +36,12 @@ export default function Navbar() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // TODO: Uncomment when Better Auth client is connected:
-  // const { data: session, isPending } = useSession();
-  // const user = session?.user as NavUser | undefined;
-
   // Placeholder state for UI preview
   const isPending = false;
   const user = null as NavUser | null;
 
   const handleLogout = async () => {
     try {
-      // await signOut();
       toast.success("Logged out successfully");
       router.push("/");
       router.refresh();
@@ -57,20 +50,15 @@ export default function Navbar() {
     }
   };
 
-  // Role-based dashboard path
   const getDashboardHref = (role?: string) => {
     if (role === "admin") return "/dashboard/admin";
     if (role === "vendor") return "/dashboard/vendor";
-    return "/dashboard/customer";
+    return "/dashboard";
   };
 
-  // Build navigation links dynamically based on auth & role
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Browse Menu", href: "/menu" },
-    ...(user?.role === "customer"
-      ? [{ label: "My Orders", href: "/dashboard/customer/orders" }]
-      : []),
     ...(user?.role === "vendor"
       ? [
           { label: "Add Item", href: "/dashboard/vendor/add-item" },
@@ -83,6 +71,8 @@ export default function Navbar() {
   ];
 
   const isActive = (href: string) => pathname === href;
+  const isDashboardActive = pathname.startsWith("/dashboard");
+  const dashboardHref = getDashboardHref(user?.role);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#0B1315]/95 backdrop-blur-md border-b border-[#D4A359]/20">
@@ -102,7 +92,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* CENTER: Desktop Navigation Links */}
+        {/* CENTER: Desktop Navigation Links + Single Dashboard Button */}
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link
@@ -120,6 +110,21 @@ export default function Navbar() {
               )}
             </Link>
           ))}
+
+          <Button
+            asChild
+            variant="outline"
+            className={`rounded-none text-xs uppercase tracking-[0.16em] h-9 px-4 transition-all ${
+              isDashboardActive
+                ? "bg-[#E05A2B] border-[#E05A2B] text-white hover:bg-[#c84b20] hover:text-white"
+                : "border-[#D4A359]/50 bg-[#132024] text-[#D4A359] hover:bg-[#E05A2B] hover:border-[#E05A2B] hover:text-white"
+            }`}
+          >
+            <Link href={dashboardHref} className="flex items-center gap-2">
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </Link>
+          </Button>
         </nav>
 
         {/* RIGHT: Auth Actions / Profile Dropdown */}
@@ -129,7 +134,7 @@ export default function Navbar() {
           ) : !user ? (
             <>
               <Link
-                href="/sign-in"
+                href="/signin"
                 className="text-xs uppercase tracking-[0.16em] font-medium text-slate-300 hover:text-[#D4A359] transition-colors px-3 py-2"
               >
                 Sign In
@@ -139,7 +144,7 @@ export default function Navbar() {
                 variant="outline"
                 className="rounded-none border-[#D4A359]/70 bg-transparent text-[#D4A359] hover:bg-[#E05A2B] hover:border-[#E05A2B] hover:text-white text-xs uppercase tracking-[0.16em] px-5 h-10 transition-all"
               >
-                <Link href="/sign-up">Sign Up</Link>
+                <Link href="/signup">Sign Up</Link>
               </Button>
             </>
           ) : (
@@ -184,7 +189,7 @@ export default function Navbar() {
                   className="focus:bg-[#0B1315] focus:text-[#D4A359] cursor-pointer"
                 >
                   <Link
-                    href={getDashboardHref(user.role)}
+                    href={dashboardHref}
                     className="flex items-center gap-2"
                   >
                     <LayoutDashboard className="w-4 h-4 text-[#D4A359]" />
@@ -280,17 +285,29 @@ export default function Navbar() {
                   </Link>
                 ))}
 
+                <Button
+                  asChild
+                  variant="outline"
+                  className="rounded-none border-[#D4A359]/60 bg-[#132024] text-[#D4A359] hover:bg-[#E05A2B] hover:border-[#E05A2B] hover:text-white uppercase tracking-widest text-xs justify-start"
+                >
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </Button>
+
                 {!user ? (
-                  <div className="flex flex-col gap-3 mt-4">
+                  <div className="flex flex-col gap-3 mt-2">
                     <Button
                       asChild
                       variant="outline"
                       className="rounded-none border-[#D4A359] text-[#D4A359] hover:bg-[#D4A359] hover:text-black uppercase tracking-widest text-xs"
                     >
-                      <Link
-                        href="/sign-in"
-                        onClick={() => setMobileOpen(false)}
-                      >
+                      <Link href="/signin" onClick={() => setMobileOpen(false)}>
                         Sign In
                       </Link>
                     </Button>
@@ -298,24 +315,13 @@ export default function Navbar() {
                       asChild
                       className="rounded-none bg-[#E05A2B] hover:bg-[#c84b20] text-white uppercase tracking-widest text-xs"
                     >
-                      <Link
-                        href="/sign-up"
-                        onClick={() => setMobileOpen(false)}
-                      >
+                      <Link href="/signup" onClick={() => setMobileOpen(false)}>
                         Sign Up
                       </Link>
                     </Button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2 mt-2">
-                    <Link
-                      href={getDashboardHref(user.role)}
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 text-xs uppercase tracking-widest text-slate-300 py-2"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-[#D4A359]" />
-                      Dashboard
-                    </Link>
                     <Link
                       href="/dashboard/profile"
                       onClick={() => setMobileOpen(false)}
