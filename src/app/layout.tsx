@@ -19,10 +19,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PizzaHub — Hot & Fresh Pizza Delivered to Your Door",
   description:
-    "Discover local wood-fired pizzerias, customize gourmet pies, and track fresh orders from oven to table.",
+    "Discover local pizzerias, order fresh pizza, sides and desserts, and track your order from oven to table.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
