@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Pizza, Menu, LayoutDashboard, UserCog, LogOut } from "lucide-react";
+import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,7 +29,7 @@ interface NavUser {
   name: string;
   email: string;
   image?: string | null;
-  role: "customer" | "vendor" | "admin";
+  role?: "customer" | "vendor" | "admin";
 }
 
 export default function Navbar() {
@@ -36,12 +37,13 @@ export default function Navbar() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Placeholder state for UI preview
-  const isPending = false;
-  const user = null as NavUser | null;
+  const { data: session, isPending } = useSession();
+  const user = session?.user as NavUser | undefined;
+  const userRole = user?.role || "customer";
 
   const handleLogout = async () => {
     try {
+      await signOut();
       toast.success("Logged out successfully");
       router.push("/");
       router.refresh();
@@ -59,13 +61,13 @@ export default function Navbar() {
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Browse Menu", href: "/menu" },
-    ...(user?.role === "vendor"
+    ...(userRole === "vendor" && user
       ? [
           { label: "Add Item", href: "/dashboard/vendor/add-item" },
           { label: "Vendor Orders", href: "/dashboard/vendor/orders" },
         ]
       : []),
-    ...(user?.role === "admin"
+    ...(userRole === "admin" && user
       ? [{ label: "Admin Panel", href: "/dashboard/admin" }]
       : []),
   ];
@@ -150,7 +152,7 @@ export default function Navbar() {
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 pl-2 pr-3 py-1.5 rounded-sm border border-[#D4A359]/30 bg-[#132024] hover:border-[#D4A359] transition-colors focus:outline-none">
+                <button className="flex items-center gap-3 pl-2 pr-3 py-1.5 rounded-sm border border-[#D4A359]/30 bg-[#132024] hover:border-[#D4A359] transition-colors focus:outline-none cursor-pointer">
                   <Avatar className="h-8 w-8 border border-[#D4A359]/50">
                     <AvatarImage src={user.image || ""} alt={user.name} />
                     <AvatarFallback className="bg-[#E05A2B] text-white text-xs font-bold">
@@ -162,7 +164,7 @@ export default function Navbar() {
                       {user.name}
                     </p>
                     <p className="text-[10px] uppercase tracking-wider text-[#D4A359] mt-1">
-                      {user.role}
+                      {userRole}
                     </p>
                   </div>
                 </button>
@@ -266,7 +268,7 @@ export default function Navbar() {
                         {user.name}
                       </p>
                       <p className="text-[11px] uppercase tracking-wider text-[#D4A359]">
-                        {user.role}
+                        {userRole}
                       </p>
                     </div>
                   </div>
