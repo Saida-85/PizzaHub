@@ -33,6 +33,7 @@ export interface Order {
   message: string;
   status: OrderStatus;
   createdAt: string;
+  statusUpdatedAt: string | null;
 }
 
 export interface PlatformUser {

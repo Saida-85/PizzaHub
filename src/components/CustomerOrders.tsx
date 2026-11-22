@@ -6,6 +6,7 @@ import { ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
+import OrderTimeline from "@/components/OrderTimeline";
 import StatusBadge from "@/components/StatusBadge";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/format";
@@ -25,7 +26,15 @@ export default function CustomerOrders({
     try {
       await api.patch(`/api/orders/${id}/cancel`);
       setOrders((list) =>
-        list.map((o) => (o._id === id ? { ...o, status: "cancelled" } : o)),
+        list.map((o) =>
+          o._id === id
+            ? {
+                ...o,
+                status: "cancelled",
+                statusUpdatedAt: new Date().toISOString(),
+              }
+            : o,
+        ),
       );
       toast.success("Order cancelled.");
     } catch (e) {
@@ -114,30 +123,38 @@ export default function CustomerOrders({
           </div>
 
           {openId === o._id && (
-            <dl className="mt-4 grid gap-3 border-t border-[#D4A359]/20 pt-4 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-[11px] uppercase tracking-wider text-slate-500">
-                  Delivery address
-                </dt>
-                <dd className="mt-1 text-slate-200">{o.deliveryAddress}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase tracking-wider text-slate-500">
-                  Requested on
-                </dt>
-                <dd className="mt-1 text-slate-200">
-                  {formatDate(o.createdAt)}
-                </dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-[11px] uppercase tracking-wider text-slate-500">
-                  Your message
-                </dt>
-                <dd className="mt-1 text-slate-200">
-                  {o.message || "No special instructions."}
-                </dd>
-              </div>
-            </dl>
+            <div className="mt-4 space-y-5 border-t border-[#D4A359]/20 pt-4">
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wider text-slate-500">
+                    Delivery address
+                  </dt>
+                  <dd className="mt-1 text-slate-200">{o.deliveryAddress}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wider text-slate-500">
+                    Requested on
+                  </dt>
+                  <dd className="mt-1 text-slate-200">
+                    {formatDate(o.createdAt)}
+                  </dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] uppercase tracking-wider text-slate-500">
+                    Your message
+                  </dt>
+                  <dd className="mt-1 text-slate-200">
+                    {o.message || "No special instructions."}
+                  </dd>
+                </div>
+              </dl>
+
+              <OrderTimeline
+                status={o.status}
+                createdAt={o.createdAt}
+                statusUpdatedAt={o.statusUpdatedAt}
+              />
+            </div>
           )}
         </li>
       ))}

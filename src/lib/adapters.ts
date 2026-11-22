@@ -33,8 +33,9 @@ export function toOrder(s: any): Order {
     deliveryDate: s.deliveryDate,
     deliveryAddress: s.deliveryAddress,
     message: s.message ?? "",
-    status: s.status,
+       status: s.status,
     createdAt: iso(s.createdAt),
+    statusUpdatedAt: s.statusUpdatedAt ? iso(s.statusUpdatedAt) : null,
   };
 }
 
