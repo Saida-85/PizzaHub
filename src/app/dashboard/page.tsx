@@ -1,49 +1,101 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check, Clock, ShoppingBag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BreakdownBars } from "@/components/Charts";
+import PageHeader from "@/components/PageHeader";
+import StatCard from "@/components/StatCard";
+import StatusBadge from "@/components/StatusBadge";
+import { toOrder } from "@/lib/adapters";
+import { formatDate } from "@/lib/format";
+import { serverApi } from "@/lib/server-api";
+import { requireRole } from "@/lib/session";
+import { panel, primaryBtn } from "@/lib/styles";
 
-const stats = [
-  { label: "Total orders", value: 0 },
-  { label: "Pending", value: 0 },
-  { label: "Accepted", value: 0 },
-  { label: "Rejected", value: 0 },
-];
+export const metadata = { title: "Dashboard | PizzaHub" };
 
-export default function DashboardPage() {
+export default async function CustomerOverviewPage() {
+  await requireRole("customer");
+
+  const { orders: raw } = await serverApi<{ orders: unknown[] }>(
+    "/api/orders/my",
+  );
+  const orders = raw.map(toOrder);
+  const count = (s: string) => orders.filter((o) => o.status === s).length;
+
   return (
-    <div>
-      <p className="text-[10px] uppercase tracking-[0.28em] text-[#D4A359]">
-        Your pizza nights
-      </p>
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold text-white">Overview</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            A quick look at your orders.
-          </p>
-        </div>
-        <Button
-          asChild
-          className="rounded-none bg-[#E05A2B] hover:bg-[#c84b20] text-white px-6 text-xs uppercase tracking-[0.2em] font-semibold"
-        >
-          <Link href="/menu" className="flex items-center gap-2">
-            Find a pizza <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Button>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Your pizza nights"
+        title="Overview"
+        description="A quick look at your orders."
+        action={
+          <Button asChild className={`${primaryBtn} px-6 py-6`}>
+            <Link href="/menu" className="flex items-center gap-2">
+              Find a pizza <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Total orders"
+          value={orders.length}
+          icon={ShoppingBag}
+        />
+        <StatCard label="Pending" value={count("pending")} icon={Clock} />
+        <StatCard label="Accepted" value={count("accepted")} icon={Check} />
+        <StatCard label="Rejected" value={count("rejected")} icon={X} />
       </div>
 
-      <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="border border-[#D4A359]/20 bg-[#132024] p-5"
-          >
-            <p className="text-[11px] uppercase tracking-wider text-slate-400">
-              {s.label}
-            </p>
-            <p className="mt-2 text-3xl font-semibold text-white">{s.value}</p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <BreakdownBars
+          title="Orders by status"
+          rows={[
+            { label: "Pending", value: count("pending"), color: "#fbbf24" },
+            { label: "Accepted", value: count("accepted"), color: "#34d399" },
+            { label: "Rejected", value: count("rejected"), color: "#f87171" },
+            { label: "Cancelled", value: count("cancelled"), color: "#94a3b8" },
+          ]}
+        />
+
+        <div className={`${panel} p-5`}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-white">
+              Recent orders
+            </h2>
+            <Link
+              href="/dashboard/orders"
+              className="text-xs uppercase tracking-wider text-[#D4A359] hover:underline"
+            >
+              View all
+            </Link>
           </div>
-        ))}
+          {orders.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-400">
+              No orders yet. Find a pizza to get started.
+            </p>
+          ) : (
+            <ul className="mt-4 divide-y divide-[#D4A359]/10">
+              {orders.slice(0, 4).map((o) => (
+                <li
+                  key={o._id}
+                  className="flex items-center justify-between gap-3 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">
+                      {o.itemName}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {o.vendorName} · {formatDate(o.deliveryDate)}
+                    </p>
+                  </div>
+                  <StatusBadge status={o.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
