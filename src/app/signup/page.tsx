@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -13,31 +13,74 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { signIn, signUp } from "@/lib/auth-client";
+import { authClient, signIn, signUp } from "@/lib/auth-client";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type UserRole = "customer" | "vendor";
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+function validatePassword(pw: string): string | null {
+  if (pw.length < 6) return "Password must be at least 6 characters.";
+  if (!/[A-Z]/.test(pw)) return "Password needs one uppercase letter.";
+  if (!/[a-z]/.test(pw)) return "Password needs one lowercase letter.";
+  return null;
+}
+
 export default function SignUpPage() {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
   const [showPassword, setShowPassword] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
+  const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Image must be 5MB or smaller.");
+      e.target.value = "";
+      return;
+    }
+    if (preview) URL.revokeObjectURL(preview);
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setImageFile(null);
+    setPreview(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || password.length < 8) {
-      toast.error(
-        "Please fill all fields (password must be at least 8 characters).",
-      );
+    if (!name.trim() || !email.trim() || !password) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    const pwError = validatePassword(password);
+    if (pwError) {
+      toast.error(pwError);
       return;
     }
 
@@ -54,6 +97,23 @@ export default function SignUpPage() {
       if (error) {
         toast.error(error.message || "Could not create account.");
         return;
+      }
+
+      // Optional profile image: upload to ImgBB, then save it on the user.
+      if (imageFile) {
+        try {
+          const fd = new FormData();
+          fd.append("image", imageFile);
+          const up = await api.post<{ url: string }>("/api/upload", fd);
+          const { error: updateError } = await authClient.updateUser({
+            image: up.url,
+          });
+          if (updateError) throw new Error(updateError.message);
+        } catch {
+          toast.warning(
+            "Account created, but the profile image could not be uploaded. You can add it in Profile Settings.",
+          );
+        }
       }
 
       toast.success("Account created! Welcome to PizzaHub.");
@@ -84,9 +144,10 @@ export default function SignUpPage() {
     }
   };
 
+  const busy = isLoading || isGoogleLoading;
+
   return (
     <section className="min-h-[calc(100vh-4rem)] w-full bg-[#0B1315] flex items-center justify-center px-4 py-14 relative overflow-hidden">
-      {/* Subtle radial glow */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(212,163,89,0.12),transparent_60%)]"
@@ -98,7 +159,6 @@ export default function SignUpPage() {
         transition={{ duration: 0.35 }}
         className="relative z-10 w-full max-w-md bg-[#0B1315] border border-[#D4A359]/25 p-7 sm:p-8 shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
       >
-        {/* Brand Header */}
         <div className="text-center mb-7">
           <Link href="/" className="inline-flex items-center gap-2 mb-3">
             <span className="w-9 h-9 rounded-sm bg-[#0B1315] border border-[#D4A359]/40 flex items-center justify-center">
@@ -209,7 +269,7 @@ export default function SignUpPage() {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="At least 8 characters"
+                placeholder="Min 6 chars, upper & lower case"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -228,12 +288,65 @@ export default function SignUpPage() {
                 )}
               </button>
             </div>
+            <p className="text-[11px] text-slate-500">
+              At least 6 characters with one uppercase and one lowercase letter.
+            </p>
+          </div>
+
+          {/* Profile image (optional) */}
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wider text-slate-300">
+              Profile Image{" "}
+              <span className="normal-case tracking-normal text-slate-500">
+                (optional)
+              </span>
+            </Label>
+            <div className="flex items-center gap-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-[#D4A359]/25 bg-[#132024] flex items-center justify-center">
+                {preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={preview}
+                    alt="Profile preview"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-6 w-6 text-slate-500" />
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileRef}
+                  id="profile-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePick}
+                  className="sr-only"
+                />
+                <label
+                  htmlFor="profile-image"
+                  className="inline-flex h-9 cursor-pointer items-center gap-2 border border-[#D4A359]/40 bg-[#132024] px-3 text-[11px] font-semibold uppercase tracking-wider text-white hover:bg-[#1a2b30]"
+                >
+                  <ImagePlus className="h-3.5 w-3.5 text-[#D4A359]" />
+                  {preview ? "Change" : "Choose photo"}
+                </label>
+                {preview && (
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    className="inline-flex h-9 cursor-pointer items-center gap-1.5 px-2 text-[11px] uppercase tracking-wider text-slate-400 hover:text-white"
+                  >
+                    <X className="h-3.5 w-3.5" /> Remove
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Submit */}
           <Button
             type="submit"
-            disabled={isLoading || isGoogleLoading}
+            disabled={busy}
             className="w-full h-11 mt-2 bg-[#E05A2B] hover:bg-[#c84b20] text-white rounded-none text-xs uppercase tracking-[0.2em] font-semibold transition-all cursor-pointer"
           >
             {isLoading ? "Creating Account..." : "Create Account"}
@@ -254,7 +367,7 @@ export default function SignUpPage() {
         <Button
           type="button"
           variant="outline"
-          disabled={isLoading || isGoogleLoading}
+          disabled={busy}
           onClick={handleGoogleSignUp}
           className="w-full h-11 rounded-none border-[#D4A359]/40 bg-[#132024] hover:bg-[#1a2b30] text-white text-xs uppercase tracking-[0.16em] font-semibold cursor-pointer flex items-center justify-center gap-2.5"
         >
