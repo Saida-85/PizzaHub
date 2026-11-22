@@ -10,13 +10,41 @@ export const metadata = {
   description: "Search pizzas, sides, drinks and desserts from local kitchens.",
 };
 
-export default async function MenuPage() {
-  const { items: raw } = await serverApi<{ items: unknown[] }>(
-    "/api/menu-items",
-    { auth: false },
-  );
-  const items = raw.map((i) => toItem(i));
-  const locations = [...new Set(items.map((i) => i.location))].sort();
+type SearchParams = Promise<{
+  search?: string;
+  category?: string;
+  location?: string;
+  sort?: string;
+}>;
+
+export default async function MenuPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const sp = await searchParams;
+
+  // Same four query params the API understands: /api/menu-items?search=&category=&location=&sort=
+  const qs = new URLSearchParams();
+  for (const key of ["search", "category", "location", "sort"] as const) {
+    const value = sp[key];
+    if (typeof value === "string" && value) qs.set(key, value);
+  }
+  const query = qs.toString();
+
+  const [filtered, all] = await Promise.all([
+    serverApi<{ items: unknown[] }>(
+      `/api/menu-items${query ? `?${query}` : ""}`,
+      { auth: false },
+    ),
+    // Unfiltered list, only used to fill the location dropdown
+    serverApi<{ items: unknown[] }>("/api/menu-items", { auth: false }),
+  ]);
+
+  const items = filtered.items.map((i) => toItem(i));
+  const locations = [
+    ...new Set(all.items.map((i) => toItem(i).location)),
+  ].sort();
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">

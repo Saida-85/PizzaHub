@@ -49,6 +49,15 @@ const CATEGORIES = [
 ];
 
 export default function PizzaCategoriesSection() {
+  // Menu filters use these values, not the display names.
+  const CATEGORY_VALUES: Record<string, string> = {
+    "Classic Pizzas": "classic",
+    "Vegetarian Pizzas": "vegetarian",
+    "Meat Lovers": "meat-lovers",
+    "Specialty / Gourmet Pizzas": "specialty",
+    "Sides & Appetizers": "sides",
+    "Beverages & Desserts": "beverages-desserts",
+  };
   return (
     <section className="w-full bg-[#0B1315] py-20 px-4 sm:px-6 lg:px-8 border-b border-[#D4A359]/15">
       <div className="max-w-7xl mx-auto">
@@ -68,7 +77,7 @@ export default function PizzaCategoriesSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {CATEGORIES.map((category, idx) => {
             const Icon = category.icon;
-            const queryHref = `/menu?category=${encodeURIComponent(category.name)}`;
+            const queryHref = `/menu?category=${CATEGORY_VALUES[category.name]}`;
 
             return (
               <motion.div

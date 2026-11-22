@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ type Sort = "default" | "price_asc" | "price_desc";
 
 const selectClass = `${inputClass} [&>option]:bg-[#132024]`;
 
-// Filters live in the URL: /menu?search=&category=&location=&sort=price_asc
+// The URL is the source of truth: /menu?search=&category=&location=&sort=price_asc
+// Changing a filter updates the URL, and the server page re-fetches from the API.
 export default function MenuBrowser({
   items,
   locations,
@@ -25,6 +26,7 @@ export default function MenuBrowser({
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
 
   const [search, setSearch] = useState(params.get("search") ?? "");
   const [category, setCategory] = useState(params.get("category") ?? "all");
@@ -34,29 +36,24 @@ export default function MenuBrowser({
   );
 
   useEffect(() => {
-    const qs = new URLSearchParams();
-    if (search.trim()) qs.set("search", search.trim());
-    if (category !== "all") qs.set("category", category);
-    if (location !== "all") qs.set("location", location);
-    if (sort !== "default") qs.set("sort", sort);
-    const query = qs.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
-    });
-  }, [search, category, location, sort, pathname, router]);
+    const timer = setTimeout(() => {
+      const qs = new URLSearchParams();
+      if (search.trim()) qs.set("search", search.trim());
+      if (category !== "all") qs.set("category", category);
+      if (location !== "all") qs.set("location", location);
+      if (sort !== "default") qs.set("sort", sort);
+      const next = qs.toString();
 
-  const visible = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    const list = items.filter(
-      (i) =>
-        (!term || i.itemName.toLowerCase().includes(term)) &&
-        (category === "all" || i.category === category) &&
-        (location === "all" || i.location === location),
-    );
-    if (sort === "price_asc") list.sort((a, b) => a.price - b.price);
-    if (sort === "price_desc") list.sort((a, b) => b.price - a.price);
-    return list;
-  }, [items, search, category, location, sort]);
+      // Do nothing if the URL already matches
+      if (next === params.toString()) return;
+      startTransition(() => {
+        router.replace(next ? `${pathname}?${next}` : pathname, {
+          scroll: false,
+        });
+      });
+    }, 350); // wait for the user to stop typing
+    return () => clearTimeout(timer);
+  }, [search, category, location, sort, pathname, router, params]);
 
   const reset = () => {
     setSearch("");
@@ -119,30 +116,41 @@ export default function MenuBrowser({
         </select>
       </div>
 
-      <p className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-400">
-        {visible.length} {visible.length === 1 ? "item" : "items"} found
+      <p
+        className="mt-5 text-xs uppercase tracking-[0.18em] text-slate-400"
+        aria-live="polite"
+      >
+        {isPending
+          ? "Updating..."
+          : `${items.length} ${items.length === 1 ? "item" : "items"} found`}
       </p>
 
-      {visible.length === 0 ? (
-        <div className="mt-4">
-          <EmptyState
-            icon={SearchX}
-            title="No items match your filters"
-            text="Try a different search, category or location."
-          />
-          <div className="mt-4 text-center">
-            <Button onClick={reset} className={`${outlineBtn} px-6 py-5`}>
-              Reset filters
-            </Button>
+      <div
+        className={
+          isPending ? "opacity-60 transition-opacity" : "transition-opacity"
+        }
+      >
+        {items.length === 0 ? (
+          <div className="mt-4">
+            <EmptyState
+              icon={SearchX}
+              title="No items match your filters"
+              text="Try a different search, category or location."
+            />
+            <div className="mt-4 text-center">
+              <Button onClick={reset} className={`${outlineBtn} px-6 py-5`}>
+                Reset filters
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((item) => (
-            <MenuItemCard key={item._id} item={item} />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
+              <MenuItemCard key={item._id} item={item} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
