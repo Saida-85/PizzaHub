@@ -1,9 +1,13 @@
+import { authClient } from "./auth-client";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-function getAuthToken(): string | null {
+// Asks Better Auth for a fresh short-lived JWT for the signed-in user.
+async function getAuthToken(): Promise<string | null> {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("pizzahub_token");
+  const { data } = await authClient.token();
+  return data?.token ?? null;
 }
 
 interface ApiRequestOptions extends RequestInit {
@@ -15,14 +19,13 @@ export async function apiRequest<T = unknown>(
   options: ApiRequestOptions = {}
 ): Promise<T> {
   const { token, headers, body, ...rest } = options;
-  const authToken = token ?? getAuthToken();
+  const authToken = token ?? (await getAuthToken());
 
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...rest,
     body,
-    credentials: "include",
     headers: {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),

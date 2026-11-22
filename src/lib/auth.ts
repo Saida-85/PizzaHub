@@ -1,6 +1,7 @@
 import dns from "node:dns";
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware, APIError } from "better-auth/api";
+import { jwt } from "better-auth/plugins";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
@@ -16,6 +17,7 @@ const db = client.db("pizzahubdb");
 
 export const auth = betterAuth({
   database: mongodbAdapter(db, { client }),
+  plugins: [jwt()],
   emailAndPassword: { enabled: true, minPasswordLength: 6 },
   socialProviders: {
     google: {
@@ -33,7 +35,6 @@ export const auth = betterAuth({
     },
   },
   hooks: {
-    // Server-side password rule: one uppercase and one lowercase letter
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path === "/sign-up/email") {
         const pw = String(ctx.body?.password ?? "");
