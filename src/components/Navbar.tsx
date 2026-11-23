@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Pizza, Menu, LayoutDashboard, UserCog, LogOut } from "lucide-react";
+import { Pizza, LayoutDashboard, UserCog, LogOut } from "lucide-react";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,13 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import MobileMenu from "@/components/MobileMenu";
 import { toast } from "sonner";
 
 interface NavUser {
@@ -228,125 +222,17 @@ export default function Navbar() {
 
         {/* MOBILE MENU DRAWER */}
         <div className="md:hidden">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-[#132024]"
-                aria-label="Open menu"
-              >
-                <Menu className="w-6 h-6 text-[#D4A359]" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="bg-[#0B1315] border-l border-[#D4A359]/20 text-white w-72"
-            >
-              <SheetHeader className="text-left border-b border-[#D4A359]/20 pb-4">
-                <SheetTitle className="text-white tracking-[0.18em] uppercase text-lg flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-md border border-[#D4A359]/70 bg-[#132024] flex items-center justify-center">
-                    <Pizza className="w-4 h-4 text-[#E05A2B] -rotate-12" />
-                  </div>
-                  <span>
-                    Pizza<span className="text-[#D4A359]">Hub</span>
-                  </span>
-                </SheetTitle>
-              </SheetHeader>
-
-              <div className="flex flex-col gap-4 mt-6">
-                {user && (
-                  <div className="flex items-center gap-3 p-3 bg-[#132024] border border-[#D4A359]/20">
-                    <Avatar className="h-9 w-9 border border-[#D4A359]/50">
-                      <AvatarImage src={user.image || ""} alt={user.name} />
-                      <AvatarFallback className="bg-[#E05A2B] text-white text-xs">
-                        {user.name?.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {user.name}
-                      </p>
-                      <p className="text-[11px] uppercase tracking-wider text-[#D4A359]">
-                        {userRole}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={`text-xs uppercase tracking-[0.16em] py-2 border-b border-white/5 ${
-                      isActive(link.href) ? "text-[#D4A359]" : "text-slate-300"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-
-                <Button
-                  asChild
-                  variant="outline"
-                  className="rounded-none border-[#D4A359]/60 bg-[#132024] text-[#D4A359] hover:bg-[#E05A2B] hover:border-[#E05A2B] hover:text-white uppercase tracking-widest text-xs justify-start"
-                >
-                  <Link
-                    href={dashboardHref}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2"
-                  >
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span>Dashboard</span>
-                  </Link>
-                </Button>
-
-                {!user ? (
-                  <div className="flex flex-col gap-3 mt-2">
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="rounded-none border-[#D4A359] text-[#D4A359] hover:bg-[#D4A359] hover:text-black uppercase tracking-widest text-xs"
-                    >
-                      <Link href="/signin" onClick={() => setMobileOpen(false)}>
-                        Sign In
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      className="rounded-none bg-[#E05A2B] hover:bg-[#c84b20] text-white uppercase tracking-widest text-xs"
-                    >
-                      <Link href="/signup" onClick={() => setMobileOpen(false)}>
-                        Sign Up
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <Link
-                      href="/dashboard/profile"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 text-xs uppercase tracking-widest text-slate-300 py-2"
-                    >
-                      <UserCog className="w-4 h-4 text-[#D4A359]" />
-                      Profile Settings
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setMobileOpen(false);
-                        handleLogout();
-                      }}
-                      className="flex items-center gap-2 text-xs uppercase tracking-widest text-red-400 py-2 mt-2 text-left"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+          <MobileMenu
+            open={mobileOpen}
+            onOpenChange={setMobileOpen}
+            user={user}
+            role={userRole}
+            isPending={isPending}
+            links={navLinks}
+            pathname={pathname}
+            dashboardHref={dashboardHref}
+            onLogout={handleLogout}
+          />
         </div>
       </div>
     </header>
