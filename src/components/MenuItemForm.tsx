@@ -28,6 +28,15 @@ interface MenuItemFormProps {
 
 const selectClass = `${inputClass} [&>option]:bg-[#132024]`;
 
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export default function MenuItemForm({
   mode,
   initial,
@@ -40,6 +49,7 @@ export default function MenuItemForm({
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [location, setLocation] = useState(initial?.location ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [imageUrl, setImageUrl] = useState(initial?.images[0] ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
     initial?.images[0] ?? null,
@@ -72,12 +82,31 @@ export default function MenuItemForm({
     const url = URL.createObjectURL(picked);
     blobRef.current = url;
     setFile(picked);
+    setImageUrl("");
     setPreview(url);
+  };
+
+  const handleImageUrlChange = (value: string) => {
+    setImageUrl(value);
+    if (file) {
+      setFile(null);
+    }
+    if (blobRef.current) {
+      URL.revokeObjectURL(blobRef.current);
+      blobRef.current = null;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setPreview(initial?.images[0] ?? null);
+      return;
+    }
+    setPreview(isValidHttpUrl(trimmed) ? trimmed : null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const priceNumber = Number(price);
+    const trimmedUrl = imageUrl.trim();
 
     if (itemName.trim().length < 3)
       return void toast.error("Item name must be at least 3 characters.");
@@ -88,8 +117,15 @@ export default function MenuItemForm({
       return void toast.error("Please enter the area or city.");
     if (description.trim().length < 20)
       return void toast.error("Description must be at least 20 characters.");
-    if (mode === "create" && !file)
-      return void toast.error("Please upload an item image.");
+
+    if (mode === "create" && !file && !trimmedUrl)
+      return void toast.error(
+        "Please upload an item image or paste an ImgBB / image URL.",
+      );
+    if (trimmedUrl && !isValidHttpUrl(trimmedUrl))
+      return void toast.error(
+        "Please enter a valid http(s) image URL (such as a direct ImgBB or image address).",
+      );
 
     setLoading(true);
     try {
@@ -99,6 +135,8 @@ export default function MenuItemForm({
         fd.append("image", file);
         const up = await api.post<{ url: string }>("/api/upload", fd);
         images = [up.url];
+      } else if (trimmedUrl) {
+        images = [trimmedUrl];
       }
 
       const payload = {
@@ -250,6 +288,7 @@ export default function MenuItemForm({
               <img
                 src={preview}
                 alt="Selected item preview"
+                onError={() => setPreview(null)}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -271,6 +310,24 @@ export default function MenuItemForm({
             onChange={handleFile}
             className="sr-only"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="imageUrl" className={labelClass}>
+            Or paste ImgBB / Google image address
+          </Label>
+          <input
+            id="imageUrl"
+            type="url"
+            value={imageUrl}
+            onChange={(e) => handleImageUrlChange(e.target.value)}
+            placeholder="https://i.ibb.co/... or direct image URL"
+            className={inputClass}
+          />
+          <p className="text-[11px] text-slate-400">
+            Tip: Right-click a photo and choose &ldquo;Copy image address&rdquo;
+            (not a webpage or Google search link).
+          </p>
         </div>
 
         {mode === "create" && (
