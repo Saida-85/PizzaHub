@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ClipboardList,
   Crown,
+  Heart,
   LayoutDashboard,
   LogOut,
   Plus,
@@ -46,6 +47,11 @@ const LINKS: Record<Role, NavLink[]> = {
       label: "My Orders",
       href: "/dashboard/orders",
       icon: ShoppingBag,
+    },
+    {
+      label: "Favorites",
+      href: "/dashboard/favorites",
+      icon: Heart,
     },
     {
       label: "Profile Settings",

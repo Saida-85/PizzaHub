@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Crown, MapPin, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import FavoriteButton from "@/components/FavoriteButton";
 import { categoryLabel } from "@/lib/categories";
 import { formatPrice } from "@/lib/format";
 import { outlineBtn } from "@/lib/styles";
@@ -26,6 +27,10 @@ export default function MenuItemCard({ item }: { item: MenuItem }) {
             <Crown className="h-3 w-3" /> Premium
           </span>
         )}
+        <FavoriteButton
+          itemId={item._id}
+          className="absolute bottom-3 right-3"
+        />
       </div>
 
       <div className="flex flex-1 flex-col p-5">

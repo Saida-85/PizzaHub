@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info, Loader2 } from "lucide-react";
+import { CreditCard, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import {
   inputClass,
   labelClass,
+  outlineBtn,
   panel,
   primaryBtn,
   textareaClass,
@@ -144,8 +145,22 @@ export default function OrderForm({
           "Place Order"
         )}
       </Button>
+      {/* Display-only: online payment for orders is not part of this project. */}
+      <Button
+        type="button"
+        variant="outline"
+        disabled={loading}
+        onClick={() =>
+          toast.info(
+            "Online payment for orders is coming soon. Please pay on delivery.",
+          )
+        }
+        className={`${outlineBtn} w-full py-6`}
+      >
+        <CreditCard className="mr-2 h-4 w-4" /> Pay Now
+      </Button>
       <p className="text-center text-xs text-slate-400">
-        No online payment needed. The vendor confirms your order first.
+        The vendor confirms your order first. Payment is collected on delivery.
       </p>
     </form>
   );
