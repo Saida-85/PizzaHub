@@ -100,6 +100,11 @@ const LINKS: Record<Role, NavLink[]> = {
       exact: true,
     },
     {
+      label: "Profile Settings",
+      href: "/dashboard/admin/profile",
+      icon: UserCog,
+    },
+    {
       label: "Manage Users",
       href: "/dashboard/admin/users",
       icon: Users,
