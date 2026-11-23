@@ -2,15 +2,18 @@ import PageHeader from "@/components/PageHeader";
 import StatusBadge from "@/components/StatusBadge";
 import { toTransaction } from "@/lib/adapters";
 import { formatDate, formatPrice } from "@/lib/format";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { panel } from "@/lib/styles";
 
 export const metadata = { title: "Transactions | PizzaHub" };
 
 export default async function TransactionsPage() {
-  const { transactions } = await serverApi<{ transactions: unknown[] }>(
+  const res = await serverApiSafe<{ transactions: unknown[] }>(
     "/api/admin/transactions",
   );
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { transactions } = res.data;
   const rows = transactions.map(toTransaction);
 
   // Read-only on purpose: there is no edit or status-change action here.

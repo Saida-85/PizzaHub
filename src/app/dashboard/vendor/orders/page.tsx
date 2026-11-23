@@ -1,14 +1,15 @@
 import PageHeader from "@/components/PageHeader";
 import VendorOrders from "@/components/VendorOrders";
 import { toOrder } from "@/lib/adapters";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 
 export const metadata = { title: "Customer Orders | PizzaHub" };
 
 export default async function VendorOrdersPage() {
-  const { orders: raw } = await serverApi<{ orders: unknown[] }>(
-    "/api/orders/vendor",
-  );
+  const res = await serverApiSafe<{ orders: unknown[] }>("/api/orders/vendor");
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { orders: raw } = res.data;
   const orders = raw.map(toOrder);
 
   return (

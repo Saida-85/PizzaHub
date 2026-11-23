@@ -1,12 +1,15 @@
 import AdminUsers from "@/components/AdminUsers";
 import PageHeader from "@/components/PageHeader";
 import { toUser } from "@/lib/adapters";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 
 export const metadata = { title: "Manage Users | PizzaHub" };
 
 export default async function ManageUsersPage() {
-  const { users } = await serverApi<{ users: unknown[] }>("/api/admin/users");
+  const res = await serverApiSafe<{ users: unknown[] }>("/api/admin/users");
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { users } = res.data;
 
   return (
     <div className="space-y-8">

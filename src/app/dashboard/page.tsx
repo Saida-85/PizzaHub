@@ -7,7 +7,8 @@ import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
 import { toOrder } from "@/lib/adapters";
 import { formatDate } from "@/lib/format";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { requireRole } from "@/lib/session";
 import { panel, primaryBtn } from "@/lib/styles";
 
@@ -16,9 +17,9 @@ export const metadata = { title: "Dashboard | PizzaHub" };
 export default async function CustomerOverviewPage() {
   await requireRole("customer");
 
-  const { orders: raw } = await serverApi<{ orders: unknown[] }>(
-    "/api/orders/my",
-  );
+  const res = await serverApiSafe<{ orders: unknown[] }>("/api/orders/my");
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { orders: raw } = res.data;
   const orders = raw.map(toOrder);
   const count = (s: string) => orders.filter((o) => o.status === s).length;
 

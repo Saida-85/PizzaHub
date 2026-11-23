@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import MenuItemForm from "@/components/MenuItemForm";
 import PageHeader from "@/components/PageHeader";
 import { toItem } from "@/lib/adapters";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { getPlan, requireRole } from "@/lib/session";
 
 export const metadata = { title: "Edit Menu Item | PizzaHub" };
@@ -20,9 +21,11 @@ export default async function EditItemPage({
   };
 
   // /vendor/my only returns this vendor's items, so someone else's id is "not found".
-  const { items } = await serverApi<{ items: unknown[] }>(
+  const res = await serverApiSafe<{ items: unknown[] }>(
     "/api/menu-items/vendor/my",
   );
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { items } = res.data;
   const found = items
     .map((i) => toItem(i, vendor.businessName || vendor.name))
     .find((i) => i._id === id);

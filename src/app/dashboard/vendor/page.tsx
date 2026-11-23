@@ -12,7 +12,8 @@ import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { toItem, toOrder } from "@/lib/adapters";
 import { FREE_PLAN_LIMIT } from "@/lib/mock-data";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { getPlan, requireRole } from "@/lib/session";
 import { panel, primaryBtn } from "@/lib/styles";
 
@@ -26,10 +27,18 @@ export default async function VendorOverviewPage() {
   };
   const plan = getPlan(session.user);
 
-  const [{ items: rawItems }, { orders: rawOrders }] = await Promise.all([
-    serverApi<{ items: unknown[] }>("/api/menu-items/vendor/my"),
-    serverApi<{ orders: unknown[] }>("/api/orders/vendor"),
+  const [itemsRes, ordersRes] = await Promise.all([
+    serverApiSafe<{ items: unknown[] }>("/api/menu-items/vendor/my"),
+    serverApiSafe<{ orders: unknown[] }>("/api/orders/vendor"),
   ]);
+  if (!itemsRes.ok)
+    return <ApiErrorState status={itemsRes.status} message={itemsRes.error} />;
+  if (!ordersRes.ok)
+    return (
+      <ApiErrorState status={ordersRes.status} message={ordersRes.error} />
+    );
+  const { items: rawItems } = itemsRes.data;
+  const { orders: rawOrders } = ordersRes.data;
   const items = rawItems.map((i) =>
     toItem(i, vendor.businessName || vendor.name),
   );

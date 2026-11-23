@@ -3,7 +3,8 @@ import MenuBrowser from "@/components/MenuBrowser";
 import MenuGridSkeleton from "@/components/MenuGridSkeleton";
 import PageHeader from "@/components/PageHeader";
 import { toItem } from "@/lib/adapters";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 
 export const metadata = {
   title: "Browse Menu | PizzaHub",
@@ -33,17 +34,28 @@ export default async function MenuPage({
   const query = qs.toString();
 
   const [filtered, all] = await Promise.all([
-    serverApi<{ items: unknown[] }>(
+    serverApiSafe<{ items: unknown[] }>(
       `/api/menu-items${query ? `?${query}` : ""}`,
       { auth: false },
     ),
     // Unfiltered list, only used to fill the location dropdown
-    serverApi<{ items: unknown[] }>("/api/menu-items", { auth: false }),
+    serverApiSafe<{ items: unknown[] }>("/api/menu-items", { auth: false }),
   ]);
 
-  const items = filtered.items.map((i) => toItem(i));
+  if (!filtered.ok || !all.ok) {
+    const failed = !filtered.ok
+      ? filtered
+      : (all as Extract<typeof all, { ok: false }>);
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+        <ApiErrorState status={failed.status} message={failed.error} />
+      </section>
+    );
+  }
+
+  const items = filtered.data.items.map((i) => toItem(i));
   const locations = [
-    ...new Set(all.items.map((i) => toItem(i).location)),
+    ...new Set(all.data.items.map((i) => toItem(i).location)),
   ].sort();
 
   return (

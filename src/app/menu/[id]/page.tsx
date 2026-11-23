@@ -6,7 +6,8 @@ import OrderForm from "@/components/OrderForm";
 import { toItem } from "@/lib/adapters";
 import { categoryLabel } from "@/lib/categories";
 import { formatDate, formatPrice } from "@/lib/format";
-import { ApiError, serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { getServerSession } from "@/lib/session";
 
 export default async function ItemDetailsPage({
@@ -20,15 +21,18 @@ export default async function ItemDetailsPage({
   const session = await getServerSession();
   if (!session) redirect("/signin");
 
-  const item = await serverApi<{ item: unknown }>(`/api/menu-items/${id}`, {
+  const res = await serverApiSafe<{ item: unknown }>(`/api/menu-items/${id}`, {
     auth: false,
-  })
-    .then((r) => toItem(r.item))
-    .catch((e) => {
-      if (e instanceof ApiError && (e.status === 404 || e.status === 400))
-        notFound();
-      throw e;
-    });
+  });
+  if (!res.ok) {
+    if (res.status === 404 || res.status === 400) notFound();
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+        <ApiErrorState status={res.status} message={res.error} />
+      </section>
+    );
+  }
+  const item = toItem(res.data.item);
 
   const user = session.user as unknown as { id: string; role?: string };
   let blockedReason: string | null = null;

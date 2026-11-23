@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import CustomerOrders from "@/components/CustomerOrders";
 import PageHeader from "@/components/PageHeader";
 import { toOrder } from "@/lib/adapters";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { requireRole } from "@/lib/session";
 import { primaryBtn } from "@/lib/styles";
 
@@ -12,9 +13,9 @@ export const metadata = { title: "My Orders | PizzaHub" };
 export default async function MyOrdersPage() {
   await requireRole("customer");
 
-  const { orders: raw } = await serverApi<{ orders: unknown[] }>(
-    "/api/orders/my",
-  );
+  const res = await serverApiSafe<{ orders: unknown[] }>("/api/orders/my");
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { orders: raw } = res.data;
   const orders = raw.map(toOrder);
 
   return (

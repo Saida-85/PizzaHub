@@ -37,6 +37,11 @@ export default function DashboardError({
       <p className="mt-2 max-w-sm text-sm text-slate-400">
         The server didn&apos;t respond. Your data is safe. Please try again.
       </p>
+      {error.digest && (
+        <p className="mt-3 text-[11px] text-slate-500">
+          Error ID: {error.digest}
+        </p>
+      )}
       <Button onClick={retry} className={`${primaryBtn} mt-6 px-8 py-5`}>
         Try again
       </Button>

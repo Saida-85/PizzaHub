@@ -12,20 +12,24 @@ import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { toItem, toTransaction, toUser } from "@/lib/adapters";
 import { categoryLabel } from "@/lib/categories";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { panel } from "@/lib/styles";
 
 export const metadata = { title: "Admin Overview | PizzaHub" };
 
 export default async function AdminOverviewPage() {
   const [u, m, t] = await Promise.all([
-    serverApi<{ users: unknown[] }>("/api/admin/users"),
-    serverApi<{ items: unknown[] }>("/api/admin/menu-items"),
-    serverApi<{ transactions: unknown[] }>("/api/admin/transactions"),
+    serverApiSafe<{ users: unknown[] }>("/api/admin/users"),
+    serverApiSafe<{ items: unknown[] }>("/api/admin/menu-items"),
+    serverApiSafe<{ transactions: unknown[] }>("/api/admin/transactions"),
   ]);
-  const USERS = u.users.map(toUser);
-  const MENU_ITEMS = m.items.map((i) => toItem(i));
-  const TRANSACTIONS = t.transactions.map(toTransaction);
+  if (!u.ok) return <ApiErrorState status={u.status} message={u.error} />;
+  if (!m.ok) return <ApiErrorState status={m.status} message={m.error} />;
+  if (!t.ok) return <ApiErrorState status={t.status} message={t.error} />;
+  const USERS = u.data.users.map(toUser);
+  const MENU_ITEMS = m.data.items.map((i) => toItem(i));
+  const TRANSACTIONS = t.data.transactions.map(toTransaction);
 
   const vendors = USERS.filter((x) => x.role === "vendor").length;
   const customers = USERS.filter((x) => x.role === "customer").length;

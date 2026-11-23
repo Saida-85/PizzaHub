@@ -1,15 +1,18 @@
 import MenuItemForm from "@/components/MenuItemForm";
 import PageHeader from "@/components/PageHeader";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { getPlan, requireRole } from "@/lib/session";
 
 export const metadata = { title: "Add Menu Item | PizzaHub" };
 
 export default async function AddItemPage() {
   const session = await requireRole("vendor");
-  const { items } = await serverApi<{ items: { status: string }[] }>(
+  const res = await serverApiSafe<{ items: { status: string }[] }>(
     "/api/menu-items/vendor/my",
   );
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { items } = res.data;
   const activeCount = items.filter(
     (i) => i.status === "approved" || i.status === "pending",
   ).length;

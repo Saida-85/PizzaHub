@@ -37,6 +37,11 @@ export default function GlobalError({
         We couldn&apos;t load this page. Check your connection and try again in
         a moment.
       </p>
+      {error.digest && (
+        <p className="mt-3 text-[11px] text-slate-500">
+          Error ID: {error.digest}
+        </p>
+      )}
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Button onClick={retry} className={`${primaryBtn} px-8 py-6`}>
           Try again

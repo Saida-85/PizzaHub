@@ -3,7 +3,8 @@ import EmptyState from "@/components/EmptyState";
 import MenuItemCard from "@/components/MenuItemCard";
 import PageHeader from "@/components/PageHeader";
 import { toItem } from "@/lib/adapters";
-import { serverApi } from "@/lib/server-api";
+import ApiErrorState from "@/components/ApiErrorState";
+import { serverApiSafe } from "@/lib/server-api";
 import { requireRole } from "@/lib/session";
 
 export const metadata = { title: "Favorites | PizzaHub" };
@@ -11,9 +12,9 @@ export const metadata = { title: "Favorites | PizzaHub" };
 export default async function FavoritesPage() {
   await requireRole("customer");
 
-  const { items: raw } = await serverApi<{ items: unknown[] }>(
-    "/api/favorites",
-  );
+  const res = await serverApiSafe<{ items: unknown[] }>("/api/favorites");
+  if (!res.ok) return <ApiErrorState status={res.status} message={res.error} />;
+  const { items: raw } = res.data;
   const items = raw.map((i) => toItem(i));
 
   return (
